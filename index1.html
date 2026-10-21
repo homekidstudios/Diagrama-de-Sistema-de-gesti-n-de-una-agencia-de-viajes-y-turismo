@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagrama ER (Notación Chen) - Agencia de Viajes y Turismo</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel-bg: rgba(15, 23, 42, 0.95);
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --entity-fill: #1e293b;
+      --entity-stroke: #3b82f6;
+      --attr-fill: #064e3b;
+      --attr-stroke: #10b981;
+      --pk-fill: #78350f;
+      --pk-stroke: #f59e0b;
+      --rel-fill: #581c87;
+      --rel-stroke: #a855f7;
+      --rel-attr-fill: #831843;
+      --rel-attr-stroke: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; width: 100vw; display: flex; }
+
+    .main-wrapper { position: relative; flex-grow: 1; height: 100vh; overflow: hidden; transition: margin-right 0.3s ease; }
+    .main-wrapper.sidebar-closed { margin-right: 0; }
+
+    header {
+      position: absolute; top: 16px; left: 16px; z-index: 100;
+      background: var(--panel-bg); backdrop-filter: blur(12px);
+      padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px;
+      max-width: 450px;
+    }
+    .logo-icon { width: 32px; height: 32px; background: #0284c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1rem; flex-shrink: 0; }
+    h1 { font-size: 0.9rem; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 2px; }
+    p.sub { font-size: 0.72rem; color: #94a3b8; }
+
+    .top-controls {
+      position: absolute; top: 16px; right: 24px; z-index: 100;
+      display: flex; gap: 8px; background: var(--panel-bg); backdrop-filter: blur(12px);
+      padding: 6px; border-radius: 12px; border: 1px solid var(--border);
+    }
+    .btn {
+      background: #1e293b; color: var(--text); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem;
+      font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #334155; border-color: var(--accent); color: #fff; }
+    .btn-primary { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .btn-primary:hover { background: #0369a1; }
+
+    .legend {
+      position: absolute; bottom: 16px; left: 16px; z-index: 100;
+      background: var(--panel-bg); backdrop-filter: blur(10px);
+      padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border);
+      font-size: 0.75rem; color: #94a3b8; width: 260px;
+    }
+    .legend h4 { color: #fff; margin-bottom: 8px; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+    .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Right Sidebar */
+    aside.sidebar {
+      width: 360px; background: var(--panel-bg); border-left: 1px solid var(--border);
+      height: 100vh; display: flex; flex-direction: column; z-index: 100; box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+      transition: transform 0.3s ease; position: relative;
+    }
+    aside.sidebar.closed { transform: translateX(100%); position: absolute; right: 0; }
+    
+    .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(15, 23, 42, 0.99); }
+    .tab {
+      flex: 1; padding: 12px; text-align: center; font-size: 0.8rem; font-weight: 600;
+      color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
+
+    .search-box { padding: 12px; border-bottom: 1px solid var(--border); }
+    .search-input {
+      width: 100%; background: #0b0f19; border: 1px solid var(--border);
+      padding: 8px 12px; border-radius: 8px; color: #fff; font-size: 0.8rem; outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+
+    .sidebar-content { flex-grow: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .info-card {
+      background: #111827; border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+      transition: border-color 0.2s;
+    }
+    .info-card:hover { border-color: #475569; }
+    .info-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .info-card-title { font-weight: 700; font-size: 0.9rem; color: #f8fafc; }
+    .info-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: #1e293b; color: var(--accent); font-weight: 600; }
+    .info-card-desc { font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
+    
+    .card-grid-info {
+      background: #0b0f19; border: 1px solid var(--border); border-radius: 6px; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;
+    }
+    .card-grid-item label { display: block; font-size: 0.65rem; color: #64748b; margin-bottom: 2px; }
+    .card-grid-item span { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+
+    .info-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag { font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; background: #064e3b; color: #6ee7b7; }
+    .tag.pk { background: #78350f; color: #fde047; text-decoration: underline; }
+
+    svg#canvas {
+      width: 100%; height: 100%; cursor: grab; background-color: var(--bg);
+      background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    svg#canvas:active { cursor: grabbing; }
+
+    .node { cursor: move; }
+    .node rect, .node polygon, .node ellipse { transition: filter 0.2s, stroke-width 0.2s; }
+    .node:hover rect, .node:hover polygon, .node:hover ellipse {
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+      stroke-width: 2.5px;
+    }
+
+    .node-text { font-family: inherit; font-size: 11px; font-weight: 600; fill: #ffffff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    .node-text.pk { fill: #fef08a; font-weight: 700; text-decoration: underline; }
+    .entity-text { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+
+    .link { stroke-linecap: round; pointer-events: none; }
+    .link-line { stroke: #475569; stroke-width: 1.5px; }
+    .link-double { stroke: #38bdf8; stroke-width: 3.5px; }
+    .link-double-inner { stroke: var(--bg); stroke-width: 1.5px; }
+    .link-attr { stroke: #334155; stroke-width: 1px; stroke-dasharray: 3 3; }
+
+    .cardinality {
+      font-size: 11px; font-weight: 800; fill: #38bdf8; text-anchor: middle;
+      dominant-baseline: central; pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-wrapper" id="main-wrapper">
+    <header>
+      <div class="logo-icon">🗺️</div>
+      <div>
+        <h1>Diagrama Entidad-Relación (Notación Chen)</h1>
+        <p class="sub">Sistema de Gestión de Agencia de Viajes y Turismo</p>
+      </div>
+    </header>
+
+    <div class="top-controls">
+      <button class="btn" onclick="toggleSidebar()" title="Mostrar/Ocultar Panel Lateral">🗂️ Panel</button>
+      <button class="btn" onclick="toggleAttributes()" id="btn-toggle-attr">👁️ Ocultar Atributos</button>
+      <button class="btn" onclick="zoomIn()">➕</button>
+      <button class="btn" onclick="zoomOut()">➖</button>
+      <button class="btn" onclick="resetView()">🎯</button>
+      <button class="btn btn-primary" onclick="exportSVG()">📥 Exportar SVG</button>
+    </div>
+
+    <div class="legend">
+      <h4>Leyenda Chen ℹ️</h4>
+      <div class="legend-grid">
+        <div class="legend-item"><div class="dot" style="background:#3b82f6"></div>Entidad</div>
+        <div class="legend-item"><div class="dot" style="background:#a855f7"></div>Relación</div>
+        <div class="legend-item"><div class="dot" style="background:#10b981"></div>Atributo</div>
+        <div class="legend-item"><div class="dot" style="background:#f59e0b"></div>Clave(PK)</div>
+      </div>
+    </div>
+
+    <svg id="canvas">
+      <g id="viewport">
+        <g id="links-layer"></g>
+        <g id="nodes-layer"></g>
+        <g id="labels-layer"></g>
+      </g>
+    </svg>
+  </div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-tabs">
+      <div class="tab active" id="tab-entidades" onclick="switchTab('entidades')">Entidades (9)</div>
+      <div class="tab" id="tab-relaciones" onclick="switchTab('relaciones')">Relaciones (8)</div>
+    </div>
+    <div class="search-box">
+      <input type="text" class="search-input" id="search-input" placeholder="Buscar entidad, relación o atributo..." oninput="filterSidebar()">
+    </div>
+    <div class="sidebar-content" id="sidebar-list"></div>
+  </aside>
+
+  <script>
+    const DATA_ENTITIES = [
+      { id: 'e_cliente', label: 'Cliente', desc: 'Persona registrada en el sistema de la agencia que puede efectuar una o múltiples reservas de paquetes.', attrs: [{name: 'codigo_cliente', pk:true}, {name: 'nombres'}, {name: 'apellidos'}, {name: 'numero_identificacion'}, {name: 'fecha_nacimiento'}, {name: 'telefono'}, {name: 'correo_electronico'}, {name: 'nacionalidad'}] },
+      { id: 'e_reserva', label: 'Reserva', desc: 'Contrato o apartado formal de un viaje realizado por un cliente sobre una salida programada específica.', attrs: [{name: 'numero_reserva', pk:true}, {name: 'fecha_registro'}, {name: 'cantidad_viajeros'}, {name: 'precio_total_acordado'}, {name: 'estado_confirmacion'}] },
+      { id: 'e_empleado', label: 'Empleado', desc: 'Personal administrativo/comercial de la agencia a cargo del registro y seguimiento de reservas.', attrs: [{name: 'codigo_empleado', pk:true}, {name: 'nombres'}, {name: 'apellidos'}, {name: 'cargo'}, {name: 'telefono'}, {name: 'fecha_contratacion'}] },
+      { id: 'e_salida', label: 'Salida Programada', desc: 'Instancia concreta en el calendario de la agencia vinculada a un paquete turístico con fechas y cupos.', attrs: [{name: 'codigo_salida', pk:true}, {name: 'fecha_salida'}, {name: 'fecha_retorno'}, {name: 'cupo_maximo'}, {name: 'estado_programacion'}] },
+      { id: 'e_paquete', label: 'Paquete Turístico', desc: 'Oferta comercial de viaje predefinida que incluye múltiples destinos y servicios complementarios.', attrs: [{name: 'codigo_paquete', pk:true}, {name: 'nombre_comercial'}, {name: 'descripcion'}, {name: 'duracion_estimada'}, {name: 'precio_base'}, {name: 'estado_disponibilidad'}] },
+      { id: 'e_destino', label: 'Destino', desc: 'Localización geográfica específica que forma parte de los itinerarios de los paquetes turísticos.', attrs: [{name: 'codigo_destino', pk:true}, {name: 'nombre'}, {name: 'ciudad'}, {name: 'pais'}, {name: 'descripcion'}, {name: 'categoria_turistica'}] },
+      { id: 'e_servicio', label: 'Servicio Complementario', desc: 'Prestaciones adicionales asociadas al paquete (alojamiento, transporte, alimentación, seguros, etc.).', attrs: [{name: 'codigo_servicio', pk:true}, {name: 'nombre'}, {name: 'descripcion'}, {name: 'categoria'}, {name: 'precio_referencial'}] },
+      { id: 'e_proveedor', label: 'Proveedor', desc: 'Empresa u organización externa encargada de proveer los servicios complementarios contratados.', attrs: [{name: 'codigo_proveedor', pk:true}, {name: 'razon_social'}, {name: 'pais'}, {name: 'telefono'}, {name: 'correo_electronico'}] },
+      { id: 'e_guia', label: 'Guía Turístico', desc: 'Personal especializado encargado de acompañar y guiar las salidas programadas de la agencia.', attrs: [{name: 'codigo_guia', pk:true}, {name: 'nombres'}, {name: 'apellidos'}, {name: 'idiomas_domina'}, {name: 'especialidad'}, {name: 'telefono'}] }
+    ];
+
+    const DATA_RELATIONS = [
+      { id: 'r_realiza', label: 'Realiza_Reserva', desc: 'Un cliente puede realizar 0 o muchas reservas. Toda reserva pertenece obligatoriamente a un único cliente.', c1Name: 'Cliente:', c1Val: '1 (Opcional)', c2Name: 'Reserva:', c2Val: 'N (Total)', attrs: [] },
+      { id: 'r_recibe', label: 'Recibe_Reserva', desc: 'Una salida programada recibe múltiples reservas hasta agotar cupos. Cada reserva es para una salida específica.', c1Name: 'Salida Programada:', c1Val: '1 (Opcional)', c2Name: 'Reserva:', c2Val: 'N (Total)', attrs: [] },
+      { id: 'r_gestiona', label: 'Gestiona_Reserva', desc: 'Un empleado puede administrar múltiples reservas o ninguna. Toda reserva requiere un empleado responsable.', c1Name: 'Empleado:', c1Val: '1 (Opcional)', c2Name: 'Reserva:', c2Val: 'N (Total)', attrs: [] },
+      { id: 'r_tiene', label: 'Tiene_Salida', desc: 'Un paquete turístico puede tener varias salidas programadas o ninguna. Cada salida corresponde a un único paquete.', c1Name: 'Paquete Turístico:', c1Val: '1 (Opcional)', c2Name: 'Salida Programada:', c2Val: 'N (Total)', attrs: [] },
+      { id: 'r_incluye_dest', label: 'Incluye_Destino', desc: 'Un paquete incluye uno o varios destinos y un destino puede formar parte de varios paquetes.', c1Name: 'Paquete Turístico:', c1Val: 'N (Total)', c2Name: 'Destino:', c2Val: 'M (Opcional)', attrs: [{name: 'orden_visita'}, {name: 'num_dias_permanencia'}] },
+      { id: 'r_incluye_serv', label: 'Incluye_Servicio', desc: 'Un paquete incluye numerosos servicios y un servicio forma parte de diferentes paquetes.', c1Name: 'Paquete Turístico:', c1Val: 'N (Opcional)', c2Name: 'Servicio:', c2Val: 'M (Opcional)', attrs: [{name: 'cantidad_prevista'}, {name: 'costo_acordado'}, {name: 'observaciones'}] },
+      { id: 'r_provee', label: 'Provee_Servicio', desc: 'Un proveedor puede ofrecer diferentes servicios y un servicio puede ser proporcionado por varios proveedores.', c1Name: 'Proveedor:', c1Val: 'N (Opcional)', c2Name: 'Servicio:', c2Val: 'M (Opcional)', attrs: [{name: 'precio_negociado'}, {name: 'fecha_vigencia'}] },
+      { id: 'r_asigna', label: 'Asigna_Guia', desc: 'Una salida puede contar con varios guías turísticos y un guía puede participar en distintas salidas.', c1Name: 'Salida Programada:', c1Val: 'N (Opcional)', c2Name: 'Guía Turístico:', c2Val: 'M (Opcional)', attrs: [{name: 'funcion'}, {name: 'fecha_incorporacion'}, {name: 'remuneracion_acordada'}] }
+    ];
+
+    const INITIAL_NODES = [
+      { id: 'e_cliente', label: 'Cliente', type: 'entity', x: 250, y: 350 },
+      { id: 'e_reserva', label: 'Reserva', type: 'entity', x: 850, y: 350 },
+      { id: 'e_empleado', label: 'Empleado', type: 'entity', x: 850, y: 800 },
+      { id: 'e_salida', label: 'Salida Programada', type: 'entity', x: 1500, y: 350 },
+      { id: 'e_paquete', label: 'Paquete Turístico', type: 'entity', x: 1500, y: 900 },
+      { id: 'e_destino', label: 'Destino', type: 'entity', x: 2200, y: 900 },
+      { id: 'e_servicio', label: 'Servicio Complementario', type: 'entity', x: 1500, y: 1500 },
+      { id: 'e_proveedor', label: 'Proveedor', type: 'entity', x: 2200, y: 1500 },
+      { id: 'e_guia', label: 'Guía Turístico', type: 'entity', x: 2200, y: 350 },
+
+      { id: 'r_realiza', label: 'Realiza_Reserva', type: 'rel', x: 550, y: 350 },
+      { id: 'r_recibe', label: 'Recibe_Reserva', type: 'rel', x: 1180, y: 350 },
+      { id: 'r_gestiona', label: 'Gestiona_Reserva', type: 'rel', x: 850, y: 580 },
+      { id: 'r_tiene', label: 'Tiene_Salida', type: 'rel', x: 1500, y: 620 },
+      { id: 'r_incluye_dest', label: 'Incluye_Destino', type: 'rel', x: 1850, y: 900 },
+      { id: 'r_incluye_serv', label: 'Incluye_Servicio', type: 'rel', x: 1500, y: 1200 },
+      { id: 'r_provee', label: 'Provee_Servicio', type: 'rel', x: 1850, y: 1500 },
+      { id: 'r_asigna', label: 'Asigna_Guia', type: 'rel', x: 1850, y: 350 },
+
+      // Atributos Cliente
+      { id: 'a_c1', label: 'codigo_cliente', type: 'attr_pk', parent: 'e_cliente', ox: -160, oy: -150 },
+      { id: 'a_c2', label: 'nombres', type: 'attr', parent: 'e_cliente', ox: 0, oy: -170 },
+      { id: 'a_c3', label: 'apellidos', type: 'attr', parent: 'e_cliente', ox: 160, oy: -150 },
+      { id: 'a_c4', label: 'numero_identificacion', type: 'attr', parent: 'e_cliente', ox: -180, oy: 0 },
+      { id: 'a_c5', label: 'fecha_nacimiento', type: 'attr', parent: 'e_cliente', ox: -160, oy: 150 },
+      { id: 'a_c6', label: 'telefono', type: 'attr', parent: 'e_cliente', ox: 0, oy: 170 },
+      { id: 'a_c7', label: 'correo_electronico', type: 'attr', parent: 'e_cliente', ox: 160, oy: 150 },
+      { id: 'a_c8', label: 'nacionalidad', type: 'attr', parent: 'e_cliente', ox: -220, oy: -80 },
+
+      // Atributos Reserva
+      { id: 'a_r1', label: 'numero_reserva', type: 'attr_pk', parent: 'e_reserva', ox: -160, oy: -140 },
+      { id: 'a_r2', label: 'fecha_registro', type: 'attr', parent: 'e_reserva', ox: 0, oy: -160 },
+      { id: 'a_r3', label: 'cantidad_viajeros', type: 'attr', parent: 'e_reserva', ox: 160, oy: -140 },
+      { id: 'a_r4', label: 'precio_total_acordado', type: 'attr', parent: 'e_reserva', ox: -180, oy: 0 },
+      { id: 'a_r5', label: 'estado_confirmacion', type: 'attr', parent: 'e_reserva', ox: -160, oy: 140 },
+
+      // Atributos Empleado
+      { id: 'a_e1', label: 'codigo_empleado', type: 'attr_pk', parent: 'e_empleado', ox: -180, oy: -100 },
+      { id: 'a_e2', label: 'nombres', type: 'attr', parent: 'e_empleado', ox: -180, oy: 100 },
+      { id: 'a_e3', label: 'apellidos', type: 'attr', parent: 'e_empleado', ox: 0, oy: 160 },
+      { id: 'a_e4', label: 'cargo', type: 'attr', parent: 'e_empleado', ox: 180, oy: 100 },
+      { id: 'a_e5', label: 'telefono', type: 'attr', parent: 'e_empleado', ox: 180, oy: -100 },
+      { id: 'a_e6', label: 'fecha_contratacion', type: 'attr', parent: 'e_empleado', ox: 0, oy: -160 },
+
+      // Atributos Salida
+      { id: 'a_s1', label: 'codigo_salida', type: 'attr_pk', parent: 'e_salida', ox: -160, oy: -150 },
+      { id: 'a_s2', label: 'fecha_salida', type: 'attr', parent: 'e_salida', ox: 0, oy: -170 },
+      { id: 'a_s3', label: 'fecha_retorno', type: 'attr', parent: 'e_salida', ox: 160, oy: -150 },
+      { id: 'a_s4', label: 'cupo_maximo', type: 'attr', parent: 'e_salida', ox: -180, oy: 0 },
+      { id: 'a_s5', label: 'estado_programacion', type: 'attr', parent: 'e_salida', ox: -160, oy: 150 },
+
+      // Atributos Paquete
+      { id: 'a_p1', label: 'codigo_paquete', type: 'attr_pk', parent: 'e_paquete', ox: -220, oy: -120 },
+      { id: 'a_p2', label: 'nombre_comercial', type: 'attr', parent: 'e_paquete', ox: -220, oy: 0 },
+      { id: 'a_p3', label: 'descripcion', type: 'attr', parent: 'e_paquete', ox: -220, oy: 120 },
+      { id: 'a_p4', label: 'duracion_estimada', type: 'attr', parent: 'e_paquete', ox: -120, oy: 180 },
+      { id: 'a_p5', label: 'precio_base', type: 'attr', parent: 'e_paquete', ox: 120, oy: 180 },
+      { id: 'a_p6', label: 'estado_disponibilidad', type: 'attr', parent: 'e_paquete', ox: -120, oy: -180 },
+
+      // Atributos Destino
+      { id: 'a_d1', label: 'codigo_destino', type: 'attr_pk', parent: 'e_destino', ox: -160, oy: -150 },
+      { id: 'a_d2', label: 'nombre', type: 'attr', parent: 'e_destino', ox: 0, oy: -170 },
+      { id: 'a_d3', label: 'ciudad', type: 'attr', parent: 'e_destino', ox: 160, oy: -150 },
+      { id: 'a_d4', label: 'pais', type: 'attr', parent: 'e_destino', ox: 180, oy: 0 },
+      { id: 'a_d5', label: 'descripcion', type: 'attr', parent: 'e_destino', ox: 160, oy: 150 },
+      { id: 'a_d6', label: 'categoria_turistica', type: 'attr', parent: 'e_destino', ox: 0, oy: 170 },
+
+      // Atributos Servicio
+      { id: 'a_ser1', label: 'codigo_servicio', type: 'attr_pk', parent: 'e_servicio', ox: -180, oy: -120 },
+      { id: 'a_ser2', label: 'nombre', type: 'attr', parent: 'e_servicio', ox: 0, oy: -160 },
+      { id: 'a_ser3', label: 'descripcion', type: 'attr', parent: 'e_servicio', ox: -180, oy: 120 },
+      { id: 'a_ser4', label: 'categoria', type: 'attr', parent: 'e_servicio', ox: 0, oy: 160 },
+      { id: 'a_ser5', label: 'precio_referencial', type: 'attr', parent: 'e_servicio', ox: -200, oy: 0 },
+
+      // Atributos Proveedor
+      { id: 'a_pr1', label: 'codigo_proveedor', type: 'attr_pk', parent: 'e_proveedor', ox: -160, oy: -150 },
+      { id: 'a_pr2', label: 'razon_social', type: 'attr', parent: 'e_proveedor', ox: 0, oy: -170 },
+      { id: 'a_pr3', label: 'pais', type: 'attr', parent: 'e_proveedor', ox: 160, oy: -150 },
+      { id: 'a_pr4', label: 'telefono', type: 'attr', parent: 'e_proveedor', ox: 180, oy: 0 },
+      { id: 'a_pr5', label: 'correo_electronico', type: 'attr', parent: 'e_proveedor', ox: 160, oy: 150 },
+
+      // Atributos Guia
+      { id: 'a_g1', label: 'codigo_guia', type: 'attr_pk', parent: 'e_guia', ox: -160, oy: -150 },
+      { id: 'a_g2', label: 'nombres', type: 'attr', parent: 'e_guia', ox: 0, oy: -170 },
+      { id: 'a_g3', label: 'apellidos', type: 'attr', parent: 'e_guia', ox: 160, oy: -150 },
+      { id: 'a_g4', label: 'idiomas_domina', type: 'attr', parent: 'e_guia', ox: 180, oy: 0 },
+      { id: 'a_g5', label: 'especialidad', type: 'attr', parent: 'e_guia', ox: 160, oy: 150 },
+      { id: 'a_g6', label: 'telefono', type: 'attr', parent: 'e_guia', ox: 0, oy: 170 },
+
+      // Atributos de relaciones (N:M)
+      { id: 'a_rd1', label: 'orden_visita', type: 'rel_attr', parent: 'r_incluye_dest', ox: -90, oy: -110 },
+      { id: 'a_rd2', label: 'num_dias_permanencia', type: 'rel_attr', parent: 'r_incluye_dest', ox: 90, oy: -110 },
+      { id: 'a_rs1', label: 'cantidad_prevista', type: 'rel_attr', parent: 'r_incluye_serv', ox: -140, oy: -70 },
+      { id: 'a_rs2', label: 'costo_acordado', type: 'rel_attr', parent: 'r_incluye_serv', ox: 140, oy: -70 },
+      { id: 'a_rs3', label: 'observaciones', type: 'rel_attr', parent: 'r_incluye_serv', ox: 140, oy: 70 },
+      { id: 'a_rp1', label: 'precio_negociado', type: 'rel_attr', parent: 'r_provee', ox: -90, oy: -110 },
+      { id: 'a_rp2', label: 'fecha_vigencia', type: 'rel_attr', parent: 'r_provee', ox: 90, oy: -110 },
+      { id: 'a_rg1', label: 'funcion', type: 'rel_attr', parent: 'r_asigna', ox: -120, oy: -100 },
+      { id: 'a_rg2', label: 'fecha_incorporacion', type: 'rel_attr', parent: 'r_asigna', ox: 120, oy: -100 },
+      { id: 'a_rg3', label: 'remuneracion_acordada', type: 'rel_attr', parent: 'r_asigna', ox: 0, oy: 120 },
+    ];
+
+    const LINKS = [
+      { source: 'e_cliente', target: 'r_realiza', card: '1', total: false },
+      { source: 'e_reserva', target: 'r_realiza', card: 'N', total: true },
+      { source: 'e_reserva', target: 'r_recibe', card: 'N', total: true },
+      { source: 'e_salida', target: 'r_recibe', card: '1', total: false },
+      { source: 'e_reserva', target: 'r_gestiona', card: 'N', total: true },
+      { source: 'e_empleado', target: 'r_gestiona', card: '1', total: false },
+      { source: 'e_salida', target: 'r_tiene', card: 'N', total: true },
+      { source: 'e_paquete', target: 'r_tiene', card: '1', total: false },
+      { source: 'e_paquete', target: 'r_incluye_dest', card: 'N', total: true },
+      { source: 'e_destino', target: 'r_incluye_dest', card: 'M', total: false },
+      { source: 'e_paquete', target: 'r_incluye_serv', card: 'N', total: false },
+      { source: 'e_servicio', target: 'r_incluye_serv', card: 'M', total: false },
+      { source: 'e_proveedor', target: 'r_provee', card: 'N', total: false },
+      { source: 'e_servicio', target: 'r_provee', card: 'M', total: false },
+      { source: 'e_salida', target: 'r_asigna', card: 'N', total: false },
+      { source: 'e_guia', target: 'r_asigna', card: 'M', total: false },
+    ];
+
+    let nodes = [];
+    let state = {
+      scale: 0.55,
+      panX: 120,
+      panY: 100,
+      isPanning: false,
+      isDraggingNode: false,
+      draggedNode: null,
+      startX: 0,
+      startY: 0,
+      showAttributes: true,
+      activeTab: 'entidades'
+    };
+
+    const canvas = document.getElementById('canvas');
+    const viewport = document.getElementById('viewport');
+    const nodesLayer = document.getElementById('nodes-layer');
+    const linksLayer = document.getElementById('links-layer');
+    const labelsLayer = document.getElementById('labels-layer');
+
+    function init() {
+      nodes = INITIAL_NODES.map(n => ({ ...n }));
+      nodes.forEach(n => {
+        if (n.parent) {
+          const parentNode = nodes.find(p => p.id === n.parent);
+          if (parentNode) {
+            n.x = parentNode.x + n.ox;
+            n.y = parentNode.y + n.oy;
+          }
+        }
+      });
+      setupEventListeners();
+      render();
+      renderSidebar();
+      resetView();
+    }
+
+    function render() {
+      nodesLayer.innerHTML = '';
+      linksLayer.innerHTML = '';
+      labelsLayer.innerHTML = '';
+
+      // 1. Líneas y Cardinalidades
+      LINKS.forEach(link => {
+        const source = nodes.find(n => n.id === link.source);
+        const target = nodes.find(n => n.id === link.target);
+        if (!source || !target) return;
+
+        if (link.total) {
+          const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line1.setAttribute('class', 'link link-double');
+          linksLayer.appendChild(line1);
+
+          const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line2.setAttribute('class', 'link link-double-inner');
+          linksLayer.appendChild(line2);
+        } else {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'link link-line');
+          linksLayer.appendChild(line);
+        }
+
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('class', 'cardinality');
+        txt.textContent = link.card;
+        labelsLayer.appendChild(txt);
+      });
+
+      // 2. Líneas de atributos
+      if (state.showAttributes) {
+        nodes.filter(n => n.parent).forEach(attr => {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'link link-attr');
+          line.setAttribute('id', `link-attr-${attr.id}`);
+          linksLayer.appendChild(line);
+        });
+      }
+
+      // 3. Nodos
+      nodes.forEach(node => {
+        if (!state.showAttributes && node.parent) return;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'node');
+        g.setAttribute('id', `node-${node.id}`);
+        g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+
+        if (node.type === 'entity') {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', -90); rect.setAttribute('y', -32);
+          rect.setAttribute('width', 180); rect.setAttribute('height', 64);
+          rect.setAttribute('rx', 8);
+          rect.setAttribute('fill', 'var(--entity-fill)');
+          rect.setAttribute('stroke', 'var(--entity-stroke)');
+          rect.setAttribute('stroke-width', '2');
+          g.appendChild(rect);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('class', 'node-text entity-text');
+          text.textContent = node.label;
+          g.appendChild(text);
+
+        } else if (node.type === 'rel') {
+          const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', '0,-40 85,0 0,40 -85,0');
+          poly.setAttribute('fill', 'var(--rel-fill)');
+          poly.setAttribute('stroke', 'var(--rel-stroke)');
+          poly.setAttribute('stroke-width', '2');
+          g.appendChild(poly);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('class', 'node-text');
+          text.textContent = node.label;
+          g.appendChild(text);
+
+        } else {
+          const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+          ellipse.setAttribute('rx', 65); ellipse.setAttribute('ry', 22);
+          if (node.type === 'attr_pk') {
+            ellipse.setAttribute('fill', 'var(--pk-fill)'); ellipse.setAttribute('stroke', 'var(--pk-stroke)');
+          } else if (node.type === 'rel_attr') {
+            ellipse.setAttribute('fill', 'var(--rel-attr-fill)'); ellipse.setAttribute('stroke', 'var(--rel-attr-stroke)');
+          } else {
+            ellipse.setAttribute('fill', 'var(--attr-fill)'); ellipse.setAttribute('stroke', 'var(--attr-stroke)');
+          }
+          ellipse.setAttribute('stroke-width', '1.5');
+          g.appendChild(ellipse);
+
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('class', `node-text ${node.type === 'attr_pk' ? 'pk' : ''}`);
+          text.textContent = node.label;
+          g.appendChild(text);
+        }
+
+        g.addEventListener('mousedown', (e) => startDragNode(e, node));
+        nodesLayer.appendChild(g);
+      });
+
+      updateLines();
+    }
+
+    function updateLines() {
+      const linkElements = linksLayer.querySelectorAll('.link-line, .link-double, .link-double-inner');
+      let linkIdx = 0;
+      LINKS.forEach(link => {
+        const source = nodes.find(n => n.id === link.source);
+        const target = nodes.find(n => n.id === link.target);
+        if (!source || !target) return;
+
+        if (link.total) {
+          const l1 = linkElements[linkIdx++];
+          const l2 = linkElements[linkIdx++];
+          if (l1) { l1.setAttribute('x1', source.x); l1.setAttribute('y1', source.y); l1.setAttribute('x2', target.x); l1.setAttribute('y2', target.y); }
+          if (l2) { l2.setAttribute('x1', source.x); l2.setAttribute('y1', source.y); l2.setAttribute('x2', target.x); l2.setAttribute('y2', target.y); }
+        } else {
+          const l = linkElements[linkIdx++];
+          if (l) { l.setAttribute('x1', source.x); l.setAttribute('y1', source.y); l.setAttribute('x2', target.x); l.setAttribute('y2', target.y); }
+        }
+
+        const cardLabel = labelsLayer.children[Array.from(linksLayer.children).indexOf(linkElements[linkIdx-1]) || 0];
+        if (cardLabel) {
+          const cx = source.x + (target.x - source.x) * 0.38;
+          const cy = source.y + (target.y - source.y) * 0.38;
+          cardLabel.setAttribute('x', cx);
+          cardLabel.setAttribute('y', cy - 10);
+        }
+      });
+
+      if (state.showAttributes) {
+        nodes.filter(n => n.parent).forEach(attr => {
+          const parent = nodes.find(p => p.id === attr.parent);
+          if (!parent) return;
+          const l = document.getElementById(`link-attr-${attr.id}`);
+          if (l) {
+            l.setAttribute('x1', attr.x); l.setAttribute('y1', attr.y);
+            l.setAttribute('x2', parent.x); l.setAttribute('y2', parent.y);
+          }
+        });
+      }
+    }
+
+    function renderSidebar() {
+      const container = document.getElementById('sidebar-list');
+      container.innerHTML = '';
+      const query = document.getElementById('search-input').value.toLowerCase();
+
+      if (state.activeTab === 'entidades') {
+        DATA_ENTITIES.filter(e => e.label.toLowerCase().includes(query) || e.desc.toLowerCase().includes(query)).forEach(ent => {
+          const card = document.createElement('div');
+          card.className = 'info-card';
+          card.innerHTML = `
+            <div class="info-card-header">
+              <span class="info-card-title">${ent.label}</span>
+              <span class="info-badge">Entidad</span>
+            </div>
+            <div class="info-card-desc">${ent.desc}</div>
+            <div class="info-tags">
+              ${ent.attrs.map(a => `<span class="tag ${a.pk ? 'pk' : ''}">${a.name}${a.pk ? ' (PK)' : ''}</span>`).join('')}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } else {
+        DATA_RELATIONS.filter(r => r.label.toLowerCase().includes(query) || r.desc.toLowerCase().includes(query)).forEach(rel => {
+          const card = document.createElement('div');
+          card.className = 'info-card';
+          card.innerHTML = `
+            <div class="info-card-header">
+              <span class="info-card-title">${rel.label}</span>
+              <span class="info-badge" style="background:#3b0764; color:#d8b4fe;">Relación</span>
+            </div>
+            <div class="card-grid-info">
+              <div class="card-grid-item"><label>${rel.c1Name}</label><span>${rel.c1Val}</span></div>
+              <div class="card-grid-item"><label>${rel.c2Name}</label><span>${rel.c2Val}</span></div>
+            </div>
+            <div class="info-card-desc">${rel.desc}</div>
+            <div class="info-tags">
+              ${rel.attrs.map(a => `<span class="tag" style="background:#831843; color:#fbcfe8;">${a.name}</span>`).join('')}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+    }
+
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      document.getElementById('tab-entidades').className = `tab ${tabName === 'entidades' ? 'active' : ''}`;
+      document.getElementById('tab-relaciones').className = `tab ${tabName === 'relaciones' ? 'active' : ''}`;
+      renderSidebar();
+    }
+
+    function filterSidebar() { renderSidebar(); }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const wrapper = document.getElementById('main-wrapper');
+      sidebar.classList.toggle('closed');
+      wrapper.classList.toggle('sidebar-closed');
+      setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
+    }
+
+    function toggleAttributes() {
+      state.showAttributes = !state.showAttributes;
+      document.getElementById('btn-toggle-attr').textContent = state.showAttributes ? '👁️ Ocultar Atributos' : '👁️ Mostrar Atributos';
+      render();
+    }
+
+    function updateTransform() {
+      viewport.setAttribute('transform', `translate(${state.panX}, ${state.panY}) scale(${state.scale})`);
+    }
+
+    function startDragNode(e, node) {
+      e.stopPropagation();
+      state.isDraggingNode = true;
+      state.draggedNode = node;
+      state.startX = e.clientX;
+      state.startY = e.clientY;
+    }
+
+    function setupEventListeners() {
+      canvas.addEventListener('mousedown', (e) => {
+        if (state.isDraggingNode) return;
+        state.isPanning = true;
+        state.startX = e.clientX - state.panX;
+        state.startY = e.clientY - state.panY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (state.isDraggingNode && state.draggedNode) {
+          const dx = (e.clientX - state.startX) / state.scale;
+          const dy = (e.clientY - state.startY) / state.scale;
+
+          state.draggedNode.x += dx;
+          state.draggedNode.y += dy;
+
+          const children = nodes.filter(n => n.parent === state.draggedNode.id);
+          children.forEach(c => {
+            c.x += dx; c.y += dy;
+            const gChild = document.getElementById(`node-${c.id}`);
+            if (gChild) gChild.setAttribute('transform', `translate(${c.x}, ${c.y})`);
+          });
+
+          const g = document.getElementById(`node-${state.draggedNode.id}`);
+          if (g) g.setAttribute('transform', `translate(${state.draggedNode.x}, ${state.draggedNode.y})`);
+
+          updateLines();
+          state.startX = e.clientX;
+          state.startY = e.clientY;
+        } else if (state.isPanning) {
+          state.panX = e.clientX - state.startX;
+          state.panY = e.clientY - state.startY;
+          updateTransform();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        state.isDraggingNode = false;
+        state.draggedNode = null;
+        state.isPanning = false;
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = 1.1;
+        let newScale = e.deltaY < 0 ? state.scale * zoomFactor : state.scale / zoomFactor;
+        newScale = Math.min(Math.max(0.2, newScale), 2.5);
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        state.panX = mouseX - (mouseX - state.panX) * (newScale / state.scale);
+        state.panY = mouseY - (mouseY - state.panY) * (newScale / state.scale);
+        state.scale = newScale;
+        updateTransform();
+      }, { passive: false });
+    }
+
+    function zoomIn() { state.scale = Math.min(2.5, state.scale * 1.2); updateTransform(); }
+    function zoomOut() { state.scale = Math.max(0.2, state.scale / 1.2); updateTransform(); }
+    function resetView() {
+      state.scale = 0.48;
+      state.panX = 120;
+      state.panY = 100;
+      updateTransform();
+    }
+
+    function exportSVG() {
+      const svgData = canvas.outerHTML;
+      const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diagrama_chen_agencia_viajes.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    init();
+  </script>
+</body>
+</html>
